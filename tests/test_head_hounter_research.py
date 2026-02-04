@@ -1,6 +1,8 @@
 from typing import Any
 from unittest.mock import patch
 
+from requests.exceptions import ConnectionError
+
 from src.head_hounter_research import HHResearch
 
 
@@ -101,6 +103,27 @@ def test_get_area_code(mock_get: Any) -> None:
 
 
 @patch("requests.get")
+def test_get_area_code_invalid_response(mock_get: Any) -> None:
+    mock_get.return_value.status_code = 400
+    hhr_object = HHResearch()
+    hhr_object.get_area_code()
+
+    assert hhr_object.location_code == {}
+
+
+@patch("requests.get")
+def test_get_area_code_no_connection(mock_get: Any, capsys: Any) -> None:
+    mock_get.side_effect = ConnectionError
+    hhr_object = HHResearch()
+    with mock_get.raises(ConnectionError):
+        hhr_object.get_area_code()
+    console_message = capsys.readouterr()
+
+    assert console_message.out == "Отсутствует подключение к сети\n"
+    assert hhr_object.location_code == {}
+
+
+@patch("requests.get")
 def test_get_response(mock_get: Any) -> None:
     mock_get.return_value.status_code = 200
     mock_get.return_value.json.return_value = {
@@ -114,3 +137,22 @@ def test_get_response(mock_get: Any) -> None:
     assert hhr_object.status_code == 200
     assert vacancies == ["vacancy_1", "vacancy_2", "vacancy_3", "vacancy_1", "vacancy_2", "vacancy_3"]
     assert mock_get.call_count == 2
+
+
+@patch("requests.get")
+def test_get_response_invalid_response(mock_get: Any) -> None:
+    mock_get.return_value.status_code = 400
+    hhr_object = HHResearch()
+    vacancies = hhr_object.get_response()
+    assert vacancies == []
+
+
+@patch("requests.get")
+def test_get_response_no_connection(mock_get: Any, capsys: Any) -> None:
+    mock_get.side_effect = ConnectionError
+    hhr_object = HHResearch()
+    with mock_get.raises(ConnectionError):
+        hhr_object.get_response()
+    console_message = capsys.readouterr()
+    assert console_message.out == "Отсутствует подключение к сети\n"
+    assert hhr_object.response == []
