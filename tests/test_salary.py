@@ -177,3 +177,21 @@ def test_incorrect_lt(test_salary_dict: dict) -> None:
     some_salary = Salary(test_salary_dict)
     with pytest.raises(TypeError):
         some_salary < 123  # type: ignore
+
+
+@pytest.mark.parametrize(
+    "self_mode, self_currency, other_mode, other_currency",
+    [("За месяц", "USD", "За месяц", "RUB"), ("За месяц", "USD", "За неделю", "USD")],
+)
+def test_validation(
+    self_mode: str, self_currency: str, other_mode: str, other_currency: str, test_salary_dict: dict
+) -> None:
+
+    some_salary = Salary(test_salary_dict)
+    some_salary.required_currency = self_currency
+    some_salary.mode = self_mode
+    other_salary = Salary(test_salary_dict)
+    other_salary.required_currency = other_currency
+    other_salary.mode = other_mode
+    with pytest.raises(ValueError):
+        assert some_salary == other_salary

@@ -31,7 +31,11 @@ class Salary:
         converted_top - эквивалент верхней границы уровня зарплаты в валюте пользователя
         """
 
-        if isinstance(salary_dict.get("mode", {}).get("name"), str) and isinstance(salary_dict.get("currency"), str):
+        if (
+            salary_dict.get("mode")
+            and isinstance(salary_dict["mode"].get("name"), str)
+            and isinstance(salary_dict.get("currency"), str)
+        ):
             self.currency = salary_dict.get("currency")
             if self.currency == "RUR":
                 self.currency = "RUB"
@@ -68,39 +72,51 @@ class Salary:
             result_str += f" {self.mode.lower()}"
         return result_str
 
+    def __validate_compare(self, somthing: object) -> "Salary":
+        """Метод валидации объекта для сравнения экземпляром класса Salary"""
+
+        if isinstance(somthing, Salary):
+            if self.mode == somthing.mode and self.required_currency == somthing.required_currency:
+                return somthing
+            raise ValueError("Атрибуты required_currency и mode должны быть одинаковыми у сравниваемых экземпляров")
+        raise TypeError("Объект не принадлежит к классу Salary")
+
     def __eq__(self, other: object) -> bool:
         """Метод сравнения зарплат"""
 
-        if isinstance(other, Salary):
-            if self.converted_top and other.converted_top:
-                return self.converted_bottom == other.converted_bottom and self.converted_top == other.converted_top
-            elif not self.converted_top and not other.converted_top:
-                return self.converted_bottom == other.converted_bottom
-            return False
-        raise TypeError("Объект не принадлежит к классу Salary")
+        other = self.__validate_compare(other)
+        if self.converted_top and other.converted_top:
+            return self.converted_bottom == other.converted_bottom and self.converted_top == other.converted_top
+        elif not self.converted_top and not other.converted_top:
+            return self.converted_bottom == other.converted_bottom
+        return False
 
     def __lt__(self, other: "Salary") -> bool:
         """Метод сравнения зарплат"""
 
-        if isinstance(other, Salary):
-            if self.converted_top and other.converted_top:
-                if self.converted_top == other.converted_top:
-                    return self.converted_bottom < other.converted_bottom
-                else:
-                    return self.converted_top < other.converted_top
-            elif self.converted_top and not other.converted_top:
-                if self.converted_top == other.converted_bottom:
-                    return True
-                else:
-                    return self.converted_top < other.converted_bottom
-            elif not self.converted_top and other.converted_top:
-                if self.converted_bottom == other.converted_top:
-                    return False
-                else:
-                    return self.converted_bottom < other.converted_top
-            else:
+        other = self.__validate_compare(other)
+        if self.converted_top and other.converted_top:
+            if self.converted_top == other.converted_top:
                 return self.converted_bottom < other.converted_bottom
-        raise TypeError("Объект не принадлежит к классу Salary")
+            return self.converted_top < other.converted_top
+        elif self.converted_top and not other.converted_top:
+            if self.converted_top == other.converted_bottom:
+                return True
+            else:
+                return self.converted_top < other.converted_bottom
+        elif not self.converted_top and other.converted_top:
+            if self.converted_bottom == other.converted_top:
+                return False
+            else:
+                return self.converted_bottom < other.converted_top
+        else:
+            return self.converted_bottom < other.converted_bottom
+
+    def __le__(self, other: "Salary") -> bool:
+        """Метод сравнения зарплат"""
+
+        other = self.__validate_compare(other)
+        return self < other or self == other
 
     @classmethod
     def set_currency_rates(cls, user_currency: str) -> None:
