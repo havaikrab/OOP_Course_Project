@@ -1,5 +1,5 @@
-from typing import Any, Optional
-from unittest.mock import patch
+import time
+from typing import Optional
 
 import pytest
 
@@ -9,25 +9,23 @@ from src.salary import Salary
 
 def test_salary_init(test_salary_dict: dict) -> None:
 
-    some_salary = Salary(test_salary_dict)
-    assert some_salary.bottom == 270000
-    assert some_salary.top == 300000
+    some_salary = Salary(Salary.reform_original(test_salary_dict))
+    assert some_salary.amount_from == 270000
+    assert some_salary.amount_to == 300000
     assert some_salary.currency == "RUB"
-    assert some_salary.required_currency is None
-    assert some_salary.converted_bottom == 0
-    assert some_salary.converted_top is None
+    assert some_salary.converted_from == 0
+    assert some_salary.converted_to is None
     assert str(some_salary) == " от 270000 до 300000 RUB за месяц"
 
 
 def test_unspecific_init() -> None:
 
-    some_salary = Salary({"currency": "EUR", "mode": {"id": "MONTH", "name": "За месяц"}})
-    assert some_salary.bottom == 0
-    assert some_salary.top is None
+    some_salary = Salary(Salary.reform_original({"currency": "EUR", "mode": {"id": "MONTH", "name": "За месяц"}}))
+    assert some_salary.amount_from == 0
+    assert some_salary.amount_to is None
     assert some_salary.currency == "EUR"
-    assert some_salary.required_currency is None
-    assert some_salary.converted_bottom == 0
-    assert some_salary.converted_top is None
+    assert some_salary.converted_from == 0
+    assert some_salary.converted_to is None
     assert str(some_salary) == " EUR за месяц"
 
 
@@ -59,83 +57,70 @@ def test_unspecific_init() -> None:
 )
 def test_invalid_init(salary_dict: dict) -> None:
     with pytest.raises(ValueError):
-        Salary(salary_dict)
+        Salary(Salary.reform_original(salary_dict))
 
 
 def test_set_currency_rates(test_salary_dict: dict) -> None:
 
-    some_salary = Salary(test_salary_dict)
+    some_salary = Salary(Salary.reform_original(test_salary_dict))
     assert some_salary.currency_rates is None
 
     some_salary.set_currency_rates("USD")
     assert isinstance(some_salary.currency_rates, ApilayerRates)
+    assert Salary.required_currency == "USD"
 
-
-@patch("requests.get")
-def test_convert_salary(mock_get: Any, test_salary_dict: dict) -> None:
-    mock_get.return_value.status_code = 200
-    mock_get.return_value.json.return_value = {
-        "quotes": {"USDBRL": 5.225099, "USDEUR": 0.84601, "USDKGS": 87.450066, "USDKZT": 493.296182, "USDRUB": 80.0},
-        "source": "USD",
-        "success": True,
-        "timestamp": 1770606968,
+    Salary.currency_rates.last_update = time.time()
+    Salary.currency_rates._rates = {
+        "BRL": 5.2244,
+        "BYR": 19600,
+        "CNY": 6.90875,
+        "EUR": 0.846298,
+        "KZT": 488.871432,
+        "RUB": 75.0,
     }
-
-    some_salary = Salary(test_salary_dict)
-    some_salary.set_currency_rates("USD")
-    some_salary.convert_salary()
-
-    assert some_salary.required_currency == "USD"
-    assert some_salary.converted_bottom == 3375.0
-    assert some_salary.converted_top == 3750.0
-
-
-def test_not_needed_convert_salary(test_salary_dict: dict) -> None:
-
-    some_salary = Salary(test_salary_dict)
-    some_salary.set_currency_rates("RUB")
-    some_salary.convert_salary()
-
-    assert some_salary.required_currency == "RUB"
-    assert some_salary.converted_bottom == 270000
-    assert some_salary.converted_top == 300000
+    other_salary = Salary(Salary.reform_original(test_salary_dict))
+    assert some_salary.converted_from == 0.0
+    assert some_salary.converted_to is None
+    assert other_salary.converted_from == 3600.0
+    assert other_salary.converted_to == 4000.0
 
 
 @pytest.mark.parametrize("bottom, top", [(100, 500), (0, None), (300, None)])
 def test_magic_eq(bottom: int, top: Optional[int], test_salary_dict: dict) -> None:
 
-    some_salary = Salary(test_salary_dict)
-    some_salary.converted_bottom = bottom
-    some_salary.converted_top = top
+    some_salary = Salary(Salary.reform_original(test_salary_dict))
+    some_salary.converted_from = bottom
+    some_salary.converted_to = top
 
-    other_salary = Salary(test_salary_dict)
-    other_salary.converted_bottom = bottom
-    other_salary.converted_top = top
+    other_salary = Salary(Salary.reform_original(test_salary_dict))
+    other_salary.converted_from = bottom
+    other_salary.converted_to = top
 
     assert some_salary == other_salary
 
 
 def test_false_magic_eq(test_salary_dict: dict) -> None:
 
-    some_salary = Salary(test_salary_dict)
-    some_salary.converted_bottom = 300
-    some_salary.converted_top = 500
+    Salary.required_currency = "RUB"
+    some_salary = Salary(Salary.reform_original(test_salary_dict))
+    some_salary.converted_from = 300
+    some_salary.converted_to = None
 
-    other_salary = Salary(test_salary_dict)
-    other_salary.converted_bottom = 300
+    other_salary = Salary(Salary.reform_original(test_salary_dict))
+    other_salary.converted_from = 300
 
     assert some_salary != other_salary
 
 
 def test_incorrect_eq(test_salary_dict: dict) -> None:
 
-    some_salary = Salary(test_salary_dict)
+    some_salary = Salary(Salary.reform_original(test_salary_dict))
     with pytest.raises(TypeError):
         some_salary == 123  # type: ignore
 
 
 @pytest.mark.parametrize(
-    "self_bottom, self_top, other_bottom, other_top",
+    "self_from, self_to, other_from, other_to",
     [
         (100, 500, 0, 500),
         (0, 300, 299, 299),
@@ -146,52 +131,60 @@ def test_incorrect_eq(test_salary_dict: dict) -> None:
     ],
 )
 def test_magic_lt(
-    self_bottom: int, self_top: Optional[int], other_bottom: int, other_top: Optional[int], test_salary_dict: dict
+    self_from: int, self_to: Optional[int], other_from: int, other_to: Optional[int], test_salary_dict: dict
 ) -> None:
 
-    some_salary = Salary(test_salary_dict)
-    some_salary.converted_bottom = self_bottom
-    some_salary.converted_top = self_top
+    some_salary = Salary(Salary.reform_original(test_salary_dict))
+    some_salary.converted_from = self_from
+    some_salary.converted_to = self_to
 
-    other_salary = Salary(test_salary_dict)
-    other_salary.converted_bottom = other_bottom
-    other_salary.converted_top = other_top
+    other_salary = Salary(Salary.reform_original(test_salary_dict))
+    other_salary.converted_from = other_from
+    other_salary.converted_to = other_to
 
     assert some_salary > other_salary
 
 
 def test_limit_magic_lt(test_salary_dict: dict) -> None:
 
-    some_salary = Salary(test_salary_dict)
-    some_salary.converted_bottom = 300
+    some_salary = Salary(Salary.reform_original(test_salary_dict))
+    some_salary.converted_from = 300
+    some_salary.converted_to = None
 
-    other_salary = Salary(test_salary_dict)
-    other_salary.converted_bottom = 100
-    other_salary.converted_top = 300
+    other_salary = Salary(Salary.reform_original(test_salary_dict))
+    other_salary.converted_from = 100
+    other_salary.converted_to = 300
 
     assert not some_salary < other_salary
 
 
 def test_incorrect_lt(test_salary_dict: dict) -> None:
 
-    some_salary = Salary(test_salary_dict)
+    some_salary = Salary(Salary.reform_original(test_salary_dict))
     with pytest.raises(TypeError):
         some_salary < 123  # type: ignore
 
 
-@pytest.mark.parametrize(
-    "self_mode, self_currency, other_mode, other_currency",
-    [("За месяц", "USD", "За месяц", "RUB"), ("За месяц", "USD", "За неделю", "USD")],
-)
-def test_validation(
-    self_mode: str, self_currency: str, other_mode: str, other_currency: str, test_salary_dict: dict
-) -> None:
+def test_validation(test_salary_dict: dict) -> None:
 
-    some_salary = Salary(test_salary_dict)
-    some_salary.required_currency = self_currency
-    some_salary.mode = self_mode
-    other_salary = Salary(test_salary_dict)
-    other_salary.required_currency = other_currency
-    other_salary.mode = other_mode
+    some_salary = Salary(Salary.reform_original(test_salary_dict))
+    some_salary.mode = "За неделю"
+    other_salary = Salary(Salary.reform_original(test_salary_dict))
+    other_salary.mode = "За месяц"
     with pytest.raises(ValueError):
         assert some_salary == other_salary
+
+
+def test_salary_to_dict(test_salary_dict: dict) -> None:
+
+    Salary.required_currency = "RUB"
+    some_salary = Salary(Salary.reform_original(test_salary_dict))
+    assert some_salary.to_dict() == {
+        "amount_from": 270000,
+        "amount_to": 300000,
+        "currency": "RUB",
+        "mode": "За месяц",
+        "converted_from": 270000,
+        "converted_to": 300000,
+        "required_currency": "RUB",
+    }

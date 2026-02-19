@@ -6,7 +6,8 @@ from src.vacancy import Vacancy
 
 def test_vacancy_init(test_vacancy_dict: dict) -> None:
 
-    some_vacancy = Vacancy(test_vacancy_dict)
+    some_vacancy = Vacancy(Vacancy.reform_original(test_vacancy_dict))
+    assert some_vacancy._hh_id == "128514207"
     assert some_vacancy._name == "PHP-разработчик"
     assert some_vacancy._vacancy_link == "https://hh.ru/vacancy/128514207"
     assert some_vacancy._location == "Новосибирск"
@@ -25,10 +26,11 @@ def test_vacancy_init(test_vacancy_dict: dict) -> None:
 @pytest.mark.parametrize(
     "vacancy_dict",
     [
-        ({"name": "Работник", "alternate_url": "https://hh.ru/vacancy/1"}),
-        ({"name": "Вахтер", "alternate_url": "https://hh.ru/vacancy/3", "salary_range": {}}),
+        ({"id": "12345", "name": "Работник", "alternate_url": "https://hh.ru/vacancy/1"}),
+        ({"id": "23456", "name": "Вахтер", "alternate_url": "https://hh.ru/vacancy/3", "salary_range": {}}),
         (
             {
+                "id": "34567",
                 "name": "Директор",
                 "alternate_url": "https://hh.ru/vacancy/4",
                 "salary_range": {
@@ -41,6 +43,7 @@ def test_vacancy_init(test_vacancy_dict: dict) -> None:
         ),
         (
             {
+                "id": "45678",
                 "name": "Прораб",
                 "alternate_url": "https://hh.ru/vacancy/5",
                 "salary_range": {"from": 50000, "to": 60000, "currency": "RUR", "mode": None},
@@ -48,6 +51,7 @@ def test_vacancy_init(test_vacancy_dict: dict) -> None:
         ),
         (
             {
+                "id": "56789",
                 "name": "Директор",
                 "alternate_url": "https://hh.ru/vacancy/6",
                 "salary_range": {"from": 50000, "to": 60000, "currency": "RUR", "mode": {"id": "MONTH", "name": None}},
@@ -56,7 +60,7 @@ def test_vacancy_init(test_vacancy_dict: dict) -> None:
     ],
 )
 def test_vacancy_without_salary(vacancy_dict: dict) -> None:
-    some_vacancy = Vacancy(vacancy_dict)
+    some_vacancy = Vacancy(Vacancy.reform_original(vacancy_dict))
     assert some_vacancy._salary is None
     assert "Зарплата не указана" in str(some_vacancy)
 
@@ -92,8 +96,8 @@ def test_invalid_init(vacancy_dict: dict) -> None:
 
 def test_validation(test_vacancy_dict: dict, test_other_vacancy_dict: dict) -> None:
 
-    some_vacancy = Vacancy(test_vacancy_dict)
-    other_vacancy = str(Vacancy(test_other_vacancy_dict))
+    some_vacancy = Vacancy(Vacancy.reform_original(test_vacancy_dict))
+    other_vacancy = str(Vacancy(Vacancy.reform_original(test_other_vacancy_dict)))
     with pytest.raises(TypeError):
         assert some_vacancy == other_vacancy
 
@@ -153,45 +157,45 @@ def test_vacancy_eq(
     self_salary: dict, other_salary: dict, test_vacancy_dict: dict, test_other_vacancy_dict: dict
 ) -> None:
 
-    some_vacancy = Vacancy(test_vacancy_dict)
-    other_vacancy = Vacancy(test_other_vacancy_dict)
+    some_vacancy = Vacancy(Vacancy.reform_original(test_vacancy_dict))
+    other_vacancy = Vacancy(Vacancy.reform_original(test_other_vacancy_dict))
     assert some_vacancy == other_vacancy
 
-    some_vacancy._salary = Salary(self_salary)
-    other_vacancy._salary = Salary(other_salary)
+    some_vacancy._salary = Salary(Salary.reform_original(self_salary))
+    other_vacancy._salary = Salary(Salary.reform_original(other_salary))
     assert some_vacancy == other_vacancy
 
 
 @pytest.mark.parametrize(
-    "self_salary_bottom, other_salary_bottom, self_salary_top, other_salary_top",
+    "self_salary_from, other_salary_from, self_salary_to, other_salary_to",
     [(400000, 200000, 500000, 600000), (0, 300000, 300000, None), (300000, 400000, None, None)],
 )
 def test_vacancy_lt_le(
-    self_salary_bottom: int,
-    other_salary_bottom: int,
-    self_salary_top: int,
-    other_salary_top: int,
+    self_salary_from: int,
+    other_salary_from: int,
+    self_salary_to: int,
+    other_salary_to: int,
     test_vacancy_dict: dict,
     test_other_vacancy_dict: dict,
     test_salary_dict: dict,
 ) -> None:
 
-    some_vacancy = Vacancy(test_vacancy_dict)
-    other_vacancy = Vacancy(test_other_vacancy_dict)
+    some_vacancy = Vacancy(Vacancy.reform_original(test_vacancy_dict))
+    other_vacancy = Vacancy(Vacancy.reform_original(test_other_vacancy_dict))
     assert some_vacancy == other_vacancy
     assert some_vacancy <= other_vacancy
     assert some_vacancy >= other_vacancy
 
-    some_salary = Salary(test_salary_dict)
-    some_salary.converted_bottom = self_salary_bottom
-    some_salary.converted_top = self_salary_top
+    some_salary = Salary(Salary.reform_original(test_salary_dict))
+    some_salary.converted_from = self_salary_from
+    some_salary.converted_to = self_salary_to
     some_vacancy._salary = some_salary
     assert some_vacancy > other_vacancy
     assert some_vacancy >= other_vacancy
 
-    other_salary = Salary(test_salary_dict)
-    other_salary.converted_bottom = other_salary_bottom
-    other_salary.converted_top = other_salary_top
+    other_salary = Salary(Salary.reform_original(test_salary_dict))
+    other_salary.converted_from = other_salary_from
+    other_salary.converted_to = other_salary_to
     other_vacancy._salary = other_salary
     assert some_vacancy < other_vacancy
     assert some_vacancy <= other_vacancy
@@ -207,3 +211,37 @@ def test_vacancy_lt_le(
     some_vacancy._salary = some_salary
     assert some_vacancy > other_vacancy
     assert some_vacancy >= other_vacancy
+
+
+def test_compare_vacancy_no_salary(test_vacancy_dict: dict, test_other_vacancy_dict: dict) -> None:
+
+    some_vacancy = Vacancy(Vacancy.reform_original(test_vacancy_dict))
+    other_vacancy = Vacancy(Vacancy.reform_original(test_other_vacancy_dict))
+    assert some_vacancy == other_vacancy
+
+    some_vacancy._salary = None
+    assert some_vacancy != other_vacancy
+    assert some_vacancy < other_vacancy
+    assert some_vacancy <= other_vacancy
+
+    other_vacancy._salary = None
+    assert some_vacancy == other_vacancy
+
+    some_vacancy._salary = Salary(Salary.reform_original({"currency": "RUR", "mode": {"name": "За месяц"}}))
+    assert some_vacancy != other_vacancy
+    assert some_vacancy > other_vacancy
+    assert some_vacancy >= other_vacancy
+
+
+def test_hh_id_getter(test_vacancy_dict: dict) -> None:
+
+    some_vacancy = Vacancy(Vacancy.reform_original(test_vacancy_dict))
+    assert some_vacancy.hh_id == "128514207"
+
+
+def test_vacancy_to_dict(test_vacancy_dict: dict, parsed_vacancy_dict: dict) -> None:
+
+    Salary.required_currency = "RUB"
+    some_vacancy = Vacancy(Vacancy.reform_original(test_vacancy_dict))
+
+    assert some_vacancy.to_dict() == parsed_vacancy_dict

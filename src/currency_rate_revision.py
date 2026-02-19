@@ -38,3 +38,13 @@ class ApilayerRates(BaseRequest):
                         self._rates[k.replace(self.currency, "")] = v
                     self.last_update = response.json().get("timestamp")
         return self._rates
+
+    def convert_amount(self, user_amount: int | float, user_currency: str) -> float:
+        """Метод конвертации суммы определенной валюты в сумму валюты экземпляра класса"""
+
+        converted_amount = 0.0
+        if self.get_response() != dict():
+            currency_rate = self._rates.get(user_currency)
+            if currency_rate:
+                converted_amount = round(user_amount / currency_rate, 2)
+        return converted_amount

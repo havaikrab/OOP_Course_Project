@@ -99,3 +99,26 @@ def test_other_vacancy_dict() -> dict:
             "mode": {"name": "За месяц"},
         },
     }
+
+
+@pytest.fixture
+def parsed_vacancy_dict() -> dict:
+
+    return {
+        "hh_id": "128514207",
+        "name": "PHP-разработчик",
+        "vacancy_link": "https://hh.ru/vacancy/128514207",
+        "amount_from": 270000,
+        "amount_to": None,
+        "currency": "RUB",
+        "mode": "За месяц",
+        "converted_from": 270000,
+        "converted_to": None,
+        "required_currency": "RUB",
+        "location": "Новосибирск",
+        "created_at": "2026-02-01T08:55:32+0300",
+        "employer_name": "Токидоки",
+        "employer_link": "https://hh.ru/employer/5832652",
+        "requirements": "знание современных фреймворков (Symfony или Laravel).",
+        "responsibility": "поддержка и доработка сайта компании (японские и корейские автомобильные аукционы).",
+    }
