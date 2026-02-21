@@ -1,13 +1,14 @@
 from typing import Any
 from unittest.mock import patch
 
+import pytest
 from requests.exceptions import ConnectionError
 
 from src import utils
 
 
 @patch("requests.get")
-def test_get_area_code(mock_get: Any) -> None:
+def test_get_area_codes(mock_get: Any) -> None:
     mock_get.return_value.status_code = 200
     mock_get.return_value.json.return_value = [
         {
@@ -77,7 +78,7 @@ def test_get_area_code(mock_get: Any) -> None:
             ],
         },
     ]
-    area_codes = utils.get_area_code()
+    area_codes = utils.get_area_codes()
     assert area_codes == {
         "россия": {
             "id": 113,
@@ -96,7 +97,7 @@ def test_get_area_code(mock_get: Any) -> None:
 def test_get_area_code_no_connection(mock_get: Any, capsys: Any) -> None:
     mock_get.side_effect = ConnectionError
     with mock_get.raises(ConnectionError):
-        area_codes = utils.get_area_code()
+        area_codes = utils.get_area_codes()
     console_message = capsys.readouterr()
 
     assert console_message.out == "Отсутствует подключение к сети\n"
@@ -104,27 +105,45 @@ def test_get_area_code_no_connection(mock_get: Any, capsys: Any) -> None:
     mock_get.assert_called_once_with("https://api.hh.ru/areas/")
 
 
-# @patch("requests.get")
-# def test_get_response_invalid_response(mock_get: Any) -> None:
-#     mock_get.return_value.status_code = 400
-#     hhr_object = HHResearch()
-#     vacancies = hhr_object.get_response()
-#     assert vacancies == []
-#     assert mock_get.call_count == 20
-#     assert hhr_object._status_code == 400
+@pytest.mark.parametrize(
+    "input_list, expected",
+    [
+        (["Россия", "Москва"], 1),
+        (["Тайланд"], None),
+        (["ГРУЗИЯ", "бАтУмИ"], 2814),
+        (["россия", "республика МАРИЙ ЭЛ", "Красногорский"], 4232),
+        (["Беларусь", "Брестская Область", "Антополь"], 11130),
+        (["Молдова", ""], 62),
+        (["Молдова", "Кишинёв"], 5049),
+        (["Австралия"], 6),
+        (["Россия", "Новосибирск", "Новосибирск"], 113),
+        (["Беларусь", "Брестская область", "Брест"], 1007),
+        (["Россия", "Подмосковье", "Москва"], 1),
+        (["Россия", "Республика МАРИЙ ЭЛ", "Сосновка"], 1620),
+    ],
+)
+@patch("src.utils.get_area_codes")
+@patch("builtins.input")
+def test_area_code_detector(
+    mock_input: Any, mock_areas: Any, input_list: list, expected: int | None, area_codes: dict
+) -> None:
+    mock_input.side_effect = input_list
+    mock_areas.return_value = area_codes
+    assert utils.area_code_detector() == expected
+    assert mock_input.call_count == len(input_list)
+    mock_areas.assert_called_once_with()
 
 
-# @patch("requests.get")
-# def test_get_response_no_connection(mock_get: Any) -> None:
-#     mock_get.side_effect = ConnectionError
-#     hhr_object = HHResearch()
-#     with mock_get.raises(ConnectionError):
-#         hhr_object.get_response()
-#
-#
-#     assert hhr_object._response == []
-#     mock_get.assert_called_once_with(
-#         "https://api.hh.ru/vacancies",
-#         headers={"User-Agent": "HH-User-Agent"},
-#         params=({"page": 0, "per_page": 100, "text": None, "area": None}),
-#     )
+@patch("requests.get")
+@patch("builtins.input")
+def test_area_code_detector_no_connection(mock_input: Any, mock_get: Any, capsys: Any) -> None:
+    mock_input.return_value = "Россия"
+    mock_get.side_effect = ConnectionError
+
+    assert utils.area_code_detector() is None
+    console_message = capsys.readouterr()
+    assert (
+        console_message.out == 'Отсутствует подключение к сети\nВ источнике нет информации о вакансиях в "Россия".\n'
+    )
+    mock_get.assert_called_once_with("https://api.hh.ru/areas/")
+    mock_input.assert_called_once_with("Введите название страны: ")
