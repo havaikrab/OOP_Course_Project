@@ -11,19 +11,19 @@ def test_json_manager_read_clear_update_data(
     first_vacancy = Vacancy(parsed_vacancy_dict)
     second_vacancy = Vacancy(Vacancy.reform_original(test_vacancy_dict))
     third_vacancy = Vacancy(Vacancy.reform_original(test_other_vacancy_dict))
-    third_vacancy._salary = None
+    third_vacancy.salary = None
     vacancies_list = [first_vacancy, second_vacancy, third_vacancy]
     some_manager = JSONManager("test_data/some_test_data.json")
     some_manager.clear_data()
     assert some_manager.read_data() == list()
 
-    some_manager.update(vacancies_list)
+    some_manager.update_data(vacancies_list)
     current_data = some_manager.read_data()
     assert len(current_data) == 2
     assert Vacancy(current_data[0]) == first_vacancy
     assert Vacancy(current_data[1]) == third_vacancy
 
-    some_manager.update(vacancies_list)
+    some_manager.update_data(vacancies_list)
     current_data = some_manager.read_data()
     assert len(current_data) == 2
     assert Vacancy(current_data[0]) == first_vacancy

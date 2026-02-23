@@ -122,3 +122,25 @@ def area_code_detector() -> int | None:
                     return current_code
                 return identify_region_code(user_city.lower(), country_tuple[1])[0]
             return identify_city_code(user_city.lower(), region_tuple[1], user_region.lower())
+
+
+def detect_inclusions(location: str) -> list:
+    """Метод, определяющий список административно-территориальных субъектов, входящих в состав субъекта,
+    в названии которого есть строка, переданная в качестве аргумента"""
+
+    areas_dict = get_area_codes()
+    areas_list = [location.lower()]
+    for a, b in areas_dict.items():
+        if location.lower() in a:
+            areas_list.append(a)
+            for c, d in b.get("regions").items():
+                areas_list.append(c)
+                areas_list.extend(list(d.get("cities", dict()).keys()))
+        else:
+            for i, j in b.get("regions").items():
+                if location.lower() in i:
+                    areas_list.append(i)
+                    areas_list.extend(list(j.get("cities", dict()).keys()))
+                else:
+                    areas_list.extend([area for area in j.get("cities", dict()).keys() if location.lower() in area])
+    return areas_list

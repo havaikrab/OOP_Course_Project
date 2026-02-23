@@ -7,19 +7,19 @@ from src.vacancy import Vacancy
 def test_vacancy_init(test_vacancy_dict: dict) -> None:
 
     some_vacancy = Vacancy(Vacancy.reform_original(test_vacancy_dict))
-    assert some_vacancy._hh_id == "128514207"
-    assert some_vacancy._name == "PHP-разработчик"
-    assert some_vacancy._vacancy_link == "https://hh.ru/vacancy/128514207"
-    assert some_vacancy._location == "Новосибирск"
-    assert some_vacancy._created_at == "2026-02-01T08:55:32+0300"
-    assert some_vacancy._employer_name == "Токидоки"
-    assert some_vacancy._employer_link == "https://hh.ru/employer/5832652"
-    assert some_vacancy._requirements == "знание современных фреймворков (Symfony или Laravel)."
+    assert some_vacancy.hh_id == "128514207"
+    assert some_vacancy.name == "PHP-разработчик"
+    assert some_vacancy.vacancy_link == "https://hh.ru/vacancy/128514207"
+    assert some_vacancy.location == "Новосибирск"
+    assert some_vacancy.created_at == "2026-02-01T08:55:32+0300"
+    assert some_vacancy.employer_name == "Токидоки"
+    assert some_vacancy.employer_link == "https://hh.ru/employer/5832652"
+    assert some_vacancy.requirements == "знание современных фреймворков (Symfony или Laravel)."
     assert (
-        some_vacancy._responsibility
+        some_vacancy.responsibility
         == "поддержка и доработка сайта компании (японские и корейские автомобильные аукционы)."
     )
-    assert str(some_vacancy._salary) == " от 270000 RUB за месяц"
+    assert str(some_vacancy.salary) == " от 270000 RUB за месяц"
     assert str(some_vacancy) == "PHP-разработчик. Зарплата от 270000 RUB за месяц. https://hh.ru/vacancy/128514207"
 
 
@@ -61,7 +61,7 @@ def test_vacancy_init(test_vacancy_dict: dict) -> None:
 )
 def test_vacancy_without_salary(vacancy_dict: dict) -> None:
     some_vacancy = Vacancy(Vacancy.reform_original(vacancy_dict))
-    assert some_vacancy._salary is None
+    assert some_vacancy.salary is None
     assert "Зарплата не указана" in str(some_vacancy)
 
 
@@ -161,8 +161,8 @@ def test_vacancy_eq(
     other_vacancy = Vacancy(Vacancy.reform_original(test_other_vacancy_dict))
     assert some_vacancy == other_vacancy
 
-    some_vacancy._salary = Salary(Salary.reform_original(self_salary))
-    other_vacancy._salary = Salary(Salary.reform_original(other_salary))
+    some_vacancy.salary = Salary(Salary.reform_original(self_salary))
+    other_vacancy.salary = Salary(Salary.reform_original(other_salary))
     assert some_vacancy == other_vacancy
 
 
@@ -189,26 +189,26 @@ def test_vacancy_lt_le(
     some_salary = Salary(Salary.reform_original(test_salary_dict))
     some_salary.converted_from = self_salary_from
     some_salary.converted_to = self_salary_to
-    some_vacancy._salary = some_salary
+    some_vacancy.salary = some_salary
     assert some_vacancy > other_vacancy
     assert some_vacancy >= other_vacancy
 
     other_salary = Salary(Salary.reform_original(test_salary_dict))
     other_salary.converted_from = other_salary_from
     other_salary.converted_to = other_salary_to
-    other_vacancy._salary = other_salary
+    other_vacancy.salary = other_salary
     assert some_vacancy < other_vacancy
     assert some_vacancy <= other_vacancy
 
-    some_vacancy._salary = None
+    some_vacancy.salary = None
     assert some_vacancy < other_vacancy
     assert some_vacancy <= other_vacancy
 
-    other_vacancy._salary = None
+    other_vacancy.salary = None
     assert (some_vacancy < other_vacancy) is False
     assert (some_vacancy <= other_vacancy) is False
 
-    some_vacancy._salary = some_salary
+    some_vacancy.salary = some_salary
     assert some_vacancy > other_vacancy
     assert some_vacancy >= other_vacancy
 
@@ -219,29 +219,33 @@ def test_compare_vacancy_no_salary(test_vacancy_dict: dict, test_other_vacancy_d
     other_vacancy = Vacancy(Vacancy.reform_original(test_other_vacancy_dict))
     assert some_vacancy == other_vacancy
 
-    some_vacancy._salary = None
+    some_vacancy.salary = None
     assert some_vacancy != other_vacancy
     assert some_vacancy < other_vacancy
     assert some_vacancy <= other_vacancy
 
-    other_vacancy._salary = None
+    other_vacancy.salary = None
     assert some_vacancy == other_vacancy
 
-    some_vacancy._salary = Salary(Salary.reform_original({"currency": "RUR", "mode": {"name": "За месяц"}}))
+    some_vacancy.salary = Salary(Salary.reform_original({"currency": "RUR", "mode": {"name": "За месяц"}}))
     assert some_vacancy != other_vacancy
     assert some_vacancy > other_vacancy
     assert some_vacancy >= other_vacancy
 
 
-def test_hh_id_getter(test_vacancy_dict: dict) -> None:
+def test_invalid_salary_setter(test_vacancy_dict: dict) -> None:
 
     some_vacancy = Vacancy(Vacancy.reform_original(test_vacancy_dict))
-    assert some_vacancy.hh_id == "128514207"
+    with pytest.raises(TypeError):
+        some_vacancy.salary = 100  # type: ignore
 
 
 def test_vacancy_to_dict(test_vacancy_dict: dict, parsed_vacancy_dict: dict) -> None:
 
-    Salary.required_currency = "RUB"
-    some_vacancy = Vacancy(Vacancy.reform_original(test_vacancy_dict))
+    Salary.set_currency_rates("RUB")
 
+    some_vacancy = Vacancy(Vacancy.reform_original(test_vacancy_dict))
     assert some_vacancy.to_dict() == parsed_vacancy_dict
+
+    Salary.required_currency = None
+    Salary.currency_rates = None

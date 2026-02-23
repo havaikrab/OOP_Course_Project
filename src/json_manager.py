@@ -65,7 +65,7 @@ class JSONManager(BaseManager):
                 result.append(vacancy)
         return result
 
-    def update(self, vacancies_list: list[Vacancy]) -> None:
+    def update_data(self, vacancies_list: list[Vacancy]) -> None:
         """Метод обновления базы данных класса передаваемым списком вакансий"""
 
         current_data = self.read_data()

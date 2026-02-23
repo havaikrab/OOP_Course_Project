@@ -84,6 +84,9 @@ def test_set_currency_rates(test_salary_dict: dict) -> None:
     assert other_salary.converted_from == 3600.0
     assert other_salary.converted_to == 4000.0
 
+    Salary.currency_rates = None
+    Salary.required_currency = None
+
 
 @pytest.mark.parametrize("bottom, top", [(100, 500), (0, None), (300, None)])
 def test_magic_eq(bottom: int, top: Optional[int], test_salary_dict: dict) -> None:
@@ -101,7 +104,8 @@ def test_magic_eq(bottom: int, top: Optional[int], test_salary_dict: dict) -> No
 
 def test_false_magic_eq(test_salary_dict: dict) -> None:
 
-    Salary.required_currency = "RUB"
+    Salary.set_currency_rates("RUB")
+
     some_salary = Salary(Salary.reform_original(test_salary_dict))
     some_salary.converted_from = 300
     some_salary.converted_to = None
@@ -110,6 +114,9 @@ def test_false_magic_eq(test_salary_dict: dict) -> None:
     other_salary.converted_from = 300
 
     assert some_salary != other_salary
+
+    Salary.required_currency = None
+    Salary.currency_rates = None
 
 
 def test_incorrect_eq(test_salary_dict: dict) -> None:
@@ -177,7 +184,8 @@ def test_validation(test_salary_dict: dict) -> None:
 
 def test_salary_to_dict(test_salary_dict: dict) -> None:
 
-    Salary.required_currency = "RUB"
+    Salary.set_currency_rates("RUB")
+
     some_salary = Salary(Salary.reform_original(test_salary_dict))
     assert some_salary.to_dict() == {
         "amount_from": 270000,
@@ -188,3 +196,6 @@ def test_salary_to_dict(test_salary_dict: dict) -> None:
         "converted_to": 300000,
         "required_currency": "RUB",
     }
+
+    Salary.required_currency = None
+    Salary.currency_rates = None

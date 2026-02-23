@@ -41,7 +41,10 @@ def test_get_response_bad_response(mock_head: Any) -> None:
 @patch("requests.head")
 @patch("requests.get")
 def test_get_response(mock_get: Any, mock_head: Any) -> None:
+
     Salary.required_currency = "RUB"
+    Salary.currency_rates = None
+
     mock_head.return_value.status_code = 200
     mock_get.return_value.status_code = 200
     mock_get.return_value.json.return_value = {
@@ -86,3 +89,6 @@ def test_get_response(mock_get: Any, mock_head: Any) -> None:
     assert vacancies_list[1] == vacancies_list[3]
     assert mock_get.call_count == 2
     assert hh_request._status_code == 200
+
+    Salary.required_currency = None
+    Salary.currency_rates = None
