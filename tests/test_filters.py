@@ -2,6 +2,7 @@ from typing import Any
 from unittest.mock import patch
 
 import pytest
+import os
 from requests.exceptions import ConnectionError
 
 from src.filters import MixinFilter
@@ -80,11 +81,12 @@ def test_sort_by_salary(mock_get: Any, mock_time: Any, saved_vacancies_data: lis
         "timestamp": 177000000,
     }
 
-    Salary.set_currency_rates("UZS")
+    Salary.set_currency_rates("UZS", file_name="test_data/test_rates.json")
+    Salary.currency_rates.get_response()
+
     vacancies = [Vacancy(vacancy) for vacancy in saved_vacancies_data]
     with pytest.raises(ValueError):
         MixinFilter.sort_by_salary(vacancies)
-
     filtered_by_mode_vacancies = MixinFilter.filter_by_salary_mode("за МЕСЯЦ", vacancies)
     assert [vacancy.hh_id for vacancy in filtered_by_mode_vacancies] == [
         "130660306",
@@ -97,33 +99,33 @@ def test_sort_by_salary(mock_get: Any, mock_time: Any, saved_vacancies_data: lis
         "130153084",
     ]
 
+    filtered_by_mode_vacancies.append(Vacancy(saved_vacancies_data[-1]))
     sorted_vacancies = MixinFilter.sort_by_salary(filtered_by_mode_vacancies, reverse=True)
-    rated_salaries = [f"от {i.salary.converted_from} до {i.salary.converted_to} USZ" for i in sorted_vacancies]
-    sorted_vacancies.append(Vacancy(saved_vacancies_data[-1]))
+
     assert [str(vacancy.salary) for vacancy in sorted_vacancies] == [
-        " от 1600000 KZT за месяц",
-        " до 190000 RUB за месяц",
-        " от 1000000 до 1200000 KZT за месяц",
-        " от 5000000 до 7000000 UZS за месяц",
-        " от 6500000 UZS за месяц",
-        " от 6000000 UZS за месяц",
-        " от 100000 до 200000 KZT за месяц",
-        " от 1200 BYR за месяц",
         "None",
+        " от 1200 BYR за месяц",
+        " от 100000 до 200000 KZT за месяц",
+        " от 6000000 UZS за месяц",
+        " от 6500000 UZS за месяц",
+        " от 5000000 до 7000000 UZS за месяц",
+        " от 1000000 до 1200000 KZT за месяц",
+        " до 190000 RUB за месяц",
+        " от 1600000 KZT за месяц",
     ]
-    assert rated_salaries == [
-        "от 40000000.0 до None USZ",
-        "от 0.0 до 30400000.0 USZ",
-        "от 25000000.0 до 30000000.0 USZ",
-        "от 5000000 до 7000000 USZ",
-        "от 6500000 до None USZ",
-        "от 6000000 до None USZ",
-        "от 2500000.0 до 5000000.0 USZ",
-        "от 750.0 до None USZ",
-    ]
+    rated_salaries = [i.salary.converted_salary() for i in sorted_vacancies[1:]]
+    assert rated_salaries == [' от 750.0 UZS за месяц',
+ ' от 2500000.0 до 5000000.0 UZS за месяц',
+ ' от 6000000 UZS за месяц',
+ ' от 6500000 UZS за месяц',
+ ' от 5000000 до 7000000 UZS за месяц',
+ ' от 25000000.0 до 30000000.0 UZS за месяц',
+ ' до 30400000.0 UZS за месяц',
+ ' от 40000000.0 UZS за месяц']
 
     Salary.currency_rates = None
     Salary.required_currency = None
+    os.remove("test_data/test_rates.json")
 
 
 @patch("src.utils.get_area_codes")

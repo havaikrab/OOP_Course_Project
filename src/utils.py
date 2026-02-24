@@ -41,14 +41,6 @@ def format_filename(path_to_file: str) -> str:
     return path_to_file
 
 
-def write_area_codes_to_file(area_codes: dict) -> None:
-    """Перезаписывает словарь с кодами стран, регионов, городов в файл data/area_codes.json"""
-
-    if area_codes != dict():
-        with open("data/area_codes.json", "w", encoding="utf-8") as file:
-            json.dump(area_codes, file, indent=4, ensure_ascii=False)
-
-
 def identify_country_code(country: str, guide: dict) -> tuple[int, dict]:
     """Принимает строку с названием страны, возвращает код, присвоенный сайтом hh.ru указанной стране"""
 

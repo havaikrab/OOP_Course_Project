@@ -1,5 +1,6 @@
-import time
-from typing import Optional
+import os
+from typing import Optional, Any
+from unittest.mock import patch
 
 import pytest
 
@@ -16,6 +17,7 @@ def test_salary_init(test_salary_dict: dict) -> None:
     assert some_salary.converted_from == 0
     assert some_salary.converted_to is None
     assert str(some_salary) == " от 270000 до 300000 RUB за месяц"
+    assert some_salary.converted_salary() == "Валюта для конвертации не определена"
 
 
 def test_unspecific_init() -> None:
@@ -60,32 +62,34 @@ def test_invalid_init(salary_dict: dict) -> None:
         Salary(Salary.reform_original(salary_dict))
 
 
-def test_set_currency_rates(test_salary_dict: dict) -> None:
-
+@patch("time.time")
+@patch("requests.get")
+def test_set_currency_rates(mock_get: Any, mock_time: Any, test_salary_dict: dict) -> None:
+    mock_time.return_value = 1771004000
+    mock_get.return_value.status_code = 200
+    mock_get.return_value.json.return_value = {
+        "quotes": {"USDEUR": 0.84, "USDRUB": 75.0},
+        "source": "USD",
+        "timestamp": 1771000000,
+    }
     some_salary = Salary(Salary.reform_original(test_salary_dict))
     assert some_salary.currency_rates is None
 
-    some_salary.set_currency_rates("USD")
+    Salary.set_currency_rates("USD", file_name="test_data/test_rates.json")
+    Salary.currency_rates.get_response()
     assert isinstance(some_salary.currency_rates, ApilayerRates)
     assert Salary.required_currency == "USD"
 
-    Salary.currency_rates.last_update = time.time()
-    Salary.currency_rates._rates = {
-        "BRL": 5.2244,
-        "BYR": 19600,
-        "CNY": 6.90875,
-        "EUR": 0.846298,
-        "KZT": 488.871432,
-        "RUB": 75.0,
-    }
     other_salary = Salary(Salary.reform_original(test_salary_dict))
     assert some_salary.converted_from == 0.0
     assert some_salary.converted_to is None
+
     assert other_salary.converted_from == 3600.0
     assert other_salary.converted_to == 4000.0
 
     Salary.currency_rates = None
     Salary.required_currency = None
+    os.remove("test_data/test_rates.json")
 
 
 @pytest.mark.parametrize("bottom, top", [(100, 500), (0, None), (300, None)])

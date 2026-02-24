@@ -53,7 +53,7 @@ class MixinFilter:
     def sort_by_salary(vacancies: list, reverse: bool = False) -> list:
         """Метод сортировки вакансий по величине зарплаты"""
 
-        return sorted(vacancies, reverse=reverse)
+        return sorted(vacancies, reverse=not reverse)
 
     @staticmethod
     def get_top(top_number: int, vacancies: list) -> list:
