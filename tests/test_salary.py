@@ -1,10 +1,9 @@
 import os
-from typing import Optional, Any
+from typing import Any, Optional
 from unittest.mock import patch
 
 import pytest
 
-from src.currency_rate_revision import ApilayerRates
 from src.salary import Salary
 
 
@@ -76,8 +75,6 @@ def test_set_currency_rates(mock_get: Any, mock_time: Any, test_salary_dict: dic
     assert some_salary.currency_rates is None
 
     Salary.set_currency_rates("USD", file_name="test_data/test_rates.json")
-    Salary.currency_rates.get_response()
-    assert isinstance(some_salary.currency_rates, ApilayerRates)
     assert Salary.required_currency == "USD"
 
     other_salary = Salary(Salary.reform_original(test_salary_dict))

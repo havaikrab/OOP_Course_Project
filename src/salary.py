@@ -141,7 +141,7 @@ class Salary:
         return result
 
     @classmethod
-    def set_currency_rates(cls, user_currency: str, file_name: Optional[str]='data/currency_rates.json') -> None:
+    def set_currency_rates(cls, user_currency: str, file_name: str = "data/currency_rates.json") -> None:
         """Класс-метод, присваивающий атрибуту currency_rates объект класса ApilayerRates для переданной валюты,
         вызвав у которого метод get_response() можно получить словарь с курсами всех доступных на сайте apilayer.com
         валют относительно переданной"""
@@ -157,9 +157,9 @@ class Salary:
         result["required_currency"] = Salary.required_currency
         return result
 
-
     def converted_salary(self) -> str:
-        """Метод предоставления краткой информации о зарплате в валюте класса, указанной в атрибуте required_currency"""
+        """Метод предоставления краткой информации о зарплате в валюте класса,
+        указанной в атрибуте required_currency"""
 
         if Salary.required_currency:
             result_str = ""

@@ -1,11 +1,13 @@
-import pytest
 import json
-from unittest.mock import patch
+import os
 from typing import Any
+from unittest.mock import patch
+
+import pytest
 
 from src.json_manager import JSONManager
-from src.vacancy import Vacancy
 from src.salary import Salary
+from src.vacancy import Vacancy
 
 
 def test_json_manager_read_clear_update_data(
@@ -32,6 +34,7 @@ def test_json_manager_read_clear_update_data(
     assert len(current_data) == 2
     assert current_data[0] == first_vacancy
     assert current_data[1] == third_vacancy
+    os.remove("test_data/some_test_data.json")
 
 
 def test_json_manager_read_missing_data() -> None:
@@ -48,6 +51,7 @@ def test_invalid_data_base() -> None:
         json.dump({1: "one", 2: "two", 3: "three"}, file)
     with pytest.raises(ValueError):
         some_manager.read_data()
+    os.remove("test_data/some_test_data.json")
 
 
 @patch("time.time")
@@ -60,7 +64,7 @@ def test_given_sort_by_salary(mock_get: Any, mock_time: Any, saved_vacancies_dat
         "source": "KZT",
         "timestamp": 177000000,
     }
-    Salary.set_currency_rates("KZT")
+    Salary.set_currency_rates("KZT", file_name="test_data/test_rates.json")
     vacancies = [Vacancy(vacancy) for vacancy in saved_vacancies_data]
     with pytest.raises(ValueError):
         JSONManager.sort_by_salary(vacancies)
@@ -105,3 +109,4 @@ def test_given_sort_by_salary(mock_get: Any, mock_time: Any, saved_vacancies_dat
 
     Salary.currency_rates = None
     Salary.required_currency = None
+    os.remove("test_data/test_rates.json")

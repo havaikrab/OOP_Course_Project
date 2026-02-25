@@ -1,8 +1,8 @@
+import os
 from typing import Any
 from unittest.mock import patch
 
 import pytest
-import os
 from requests.exceptions import ConnectionError
 
 from src.filters import MixinFilter
@@ -82,8 +82,6 @@ def test_sort_by_salary(mock_get: Any, mock_time: Any, saved_vacancies_data: lis
     }
 
     Salary.set_currency_rates("UZS", file_name="test_data/test_rates.json")
-    Salary.currency_rates.get_response()
-
     vacancies = [Vacancy(vacancy) for vacancy in saved_vacancies_data]
     with pytest.raises(ValueError):
         MixinFilter.sort_by_salary(vacancies)
@@ -114,14 +112,16 @@ def test_sort_by_salary(mock_get: Any, mock_time: Any, saved_vacancies_data: lis
         " от 1600000 KZT за месяц",
     ]
     rated_salaries = [i.salary.converted_salary() for i in sorted_vacancies[1:]]
-    assert rated_salaries == [' от 750.0 UZS за месяц',
- ' от 2500000.0 до 5000000.0 UZS за месяц',
- ' от 6000000 UZS за месяц',
- ' от 6500000 UZS за месяц',
- ' от 5000000 до 7000000 UZS за месяц',
- ' от 25000000.0 до 30000000.0 UZS за месяц',
- ' до 30400000.0 UZS за месяц',
- ' от 40000000.0 UZS за месяц']
+    assert rated_salaries == [
+        " от 750.0 UZS за месяц",
+        " от 2500000.0 до 5000000.0 UZS за месяц",
+        " от 6000000 UZS за месяц",
+        " от 6500000 UZS за месяц",
+        " от 5000000 до 7000000 UZS за месяц",
+        " от 25000000.0 до 30000000.0 UZS за месяц",
+        " до 30400000.0 UZS за месяц",
+        " от 40000000.0 UZS за месяц",
+    ]
 
     Salary.currency_rates = None
     Salary.required_currency = None

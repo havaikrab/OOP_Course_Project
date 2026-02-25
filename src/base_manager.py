@@ -7,7 +7,7 @@ class BaseManager(ABC):
     методы добавления, удаления, извлечения информации из соответствующего файла"""
 
     @abstractmethod
-    def update_data(self, data: Any) -> None:
+    def update_data(self, data: Any) -> Any:
         """Абстрактный метод добавления новой информации о вакансиях в файл"""
 
         pass

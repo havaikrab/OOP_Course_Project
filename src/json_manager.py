@@ -1,5 +1,4 @@
 import json
-from typing import Optional
 
 from src.base_manager import BaseManager
 from src.filters import MixinFilter
@@ -10,15 +9,14 @@ from src.vacancy import Vacancy
 class JSONManager(BaseManager, MixinFilter):
     """Класс работы с JSON-файлами"""
 
-    def __init__(self, filename: Optional[str]='data/vacancies.json', encoding: Optional[str] = "utf-8"):
+    def __init__(self, filename: str = "data/vacancies.json", encoding: str = "utf-8"):
         """Метод инициализации объекта класса. Принимает строку с именем файла, который будет определен, как база
         данных класса, и, опционально, строку с названием формата преобразования юникода"""
 
         self.__filename = format_filename(filename)
         self.__encoding = encoding
-        self.__current_data = list()
+        self.__current_data: list = list()
         self.__saved_id: set = set()
-
 
     def __open_data(self) -> None:
         """Приватный метод, присваивающий атрибуту __current_data содержимое файла базы данных"""
@@ -33,13 +31,11 @@ class JSONManager(BaseManager, MixinFilter):
         except FileNotFoundError:
             self.__current_data = list()
 
-
     def read_data(self) -> list[Vacancy]:
         """Метод получения информации о вакансиях из файла базы данных"""
 
         self.__open_data()
         return [Vacancy(item) for item in self.__current_data]
-
 
     def clear_data(self) -> None:
         """Метод полной очистки файла базы данных"""
@@ -48,13 +44,11 @@ class JSONManager(BaseManager, MixinFilter):
         with open(self.__filename, "w", encoding=self.__encoding) as file:
             json.dump([], file)
 
-
     def __write_data(self, some_data: list) -> None:
         """Приватный метод записи информации в файл"""
 
         with open(self.__filename, "w", encoding=self.__encoding) as file:
             json.dump(some_data, file, ensure_ascii=False, indent=4)
-
 
     def __get_saved_id(self) -> None:
         """Приватный метод, обновляющий значение атрибута __saved_id, хранящий множество строк, соответствующих

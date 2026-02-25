@@ -419,3 +419,25 @@ def saved_vacancies_data() -> list:
             "responsibility": "ОПИСАНИЕ РАБОТЫ. Приветствие и регистрация пассажиров бизнес-зала.",
         },
     ]
+
+
+@pytest.fixture
+def excel_columns() -> dict:
+    return {
+        "A": "hh_id",
+        "B": "name",
+        "C": "vacancy_link",
+        "D": "location",
+        "E": "created_at",
+        "F": "employer_name",
+        "G": "employer_link",
+        "H": "requirements",
+        "I": "responsibility",
+        "J": "amount_from",
+        "K": "amount_to",
+        "L": "currency",
+        "M": "mode",
+        "N": "converted_from",
+        "O": "converted_to",
+        "P": "required_currency",
+    }
