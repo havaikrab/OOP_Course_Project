@@ -147,3 +147,8 @@ def test_area_code_detector_no_connection(mock_input: Any, mock_get: Any, capsys
     )
     mock_get.assert_called_once_with("https://api.hh.ru/areas/")
     mock_input.assert_called_once_with("Введите название страны: ")
+
+
+@pytest.mark.parametrize("currency_code, expected", [("rub", "RUB"), ("USD", "USD"), ("EURO", "RUB")])
+def test_currency_code_detector(currency_code: str, expected: str) -> None:
+    assert utils.currency_code_detector(currency_code) == expected

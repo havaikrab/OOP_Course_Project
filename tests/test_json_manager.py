@@ -79,11 +79,13 @@ def test_given_sort_by_salary(mock_get: Any, mock_time: Any, saved_vacancies_dat
         "130620371",
         "130544536",
         "130153084",
+        "130100999",
     ]
 
     sorted_vacancies = JSONManager.sort_by_salary(filtered_by_mode_vacancies)
     rated_salaries = [
-        f"от {i.salary.converted_from} до {i.salary.converted_to} {Salary.required_currency}" for i in sorted_vacancies
+        f"от {i.salary.converted_from} до {i.salary.converted_to} {Salary.required_currency}"
+        for i in sorted_vacancies[:-1]
     ]
     assert [str(vacancy.salary) for vacancy in sorted_vacancies] == [
         " от 1600000 KZT за месяц",
@@ -94,6 +96,7 @@ def test_given_sort_by_salary(mock_get: Any, mock_time: Any, saved_vacancies_dat
         " от 6000000 UZS за месяц",
         " от 100000 до 200000 KZT за месяц",
         " от 1200 BYR за месяц",
+        "None",
     ]
 
     assert rated_salaries == [

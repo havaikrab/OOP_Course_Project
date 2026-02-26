@@ -39,11 +39,11 @@ class MixinFilter:
     def filter_by_salary_mode(mode: str, vacancies: list) -> list:
         """Метод отбора вакансий по режиму выплаты зарплаты"""
 
-        return [vacancy for vacancy in vacancies if vacancy.salary and vacancy.salary.mode.lower() == mode.lower()]
+        return [vacancy for vacancy in vacancies if not vacancy.salary or vacancy.salary.mode.lower() == mode.lower()]
 
     @staticmethod
     def filter_by_salary_currency(currency: str, vacancies: list) -> list:
-        """Метод отбора вакансий по режиму выплаты зарплаты"""
+        """Метод отбора вакансий по валюте зарплаты"""
 
         return [
             vacancy for vacancy in vacancies if vacancy.salary and vacancy.salary.currency.lower() == currency.lower()
@@ -56,7 +56,19 @@ class MixinFilter:
         return sorted(vacancies, reverse=not reverse)
 
     @staticmethod
-    def get_top(top_number: int, vacancies: list) -> list:
-        """Метод, возвращающий заданное количество вакансий из переданного списка"""
+    def show_top(top_number: str, vacancies: list) -> None:
+        """Метод, выводящий в консоль заданное количество описаний вакансий из переданного списка"""
 
-        return vacancies[:top_number]
+        top_int = 10
+        top_valid = True
+        if len(top_number) > 0:
+            for i in top_number:
+                if not i.isdigit():
+                    top_valid = False
+                    break
+        else:
+            top_valid = False
+        if top_valid:
+            top_int = int(top_number)
+        for i in vacancies[:top_int]:
+            print(i)

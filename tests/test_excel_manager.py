@@ -70,6 +70,7 @@ def test_excel_manager_shared_resource(excel_columns: dict, saved_vacancies_data
         "2026-02-17T20:02:18+0300",
         "2026-02-16T09:15:41+0300",
         "2026-02-04T09:48:06+0300",
+        "2026-02-02T16:52:12+0300",
     ]
 
     other_manager.clear_data()

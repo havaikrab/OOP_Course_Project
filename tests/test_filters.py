@@ -95,9 +95,8 @@ def test_sort_by_salary(mock_get: Any, mock_time: Any, saved_vacancies_data: lis
         "130620371",
         "130544536",
         "130153084",
+        "130100999",
     ]
-
-    filtered_by_mode_vacancies.append(Vacancy(saved_vacancies_data[-1]))
     sorted_vacancies = MixinFilter.sort_by_salary(filtered_by_mode_vacancies, reverse=True)
 
     assert [str(vacancy.salary) for vacancy in sorted_vacancies] == [
@@ -129,7 +128,7 @@ def test_sort_by_salary(mock_get: Any, mock_time: Any, saved_vacancies_data: lis
 
 
 @patch("src.utils.get_area_codes")
-def test_filter_by_currency(mock_areas: Any, saved_vacancies_data: list, area_codes: dict) -> None:
+def test_filter_by_currency(mock_areas: Any, saved_vacancies_data: list, area_codes: dict, capsys: Any) -> None:
 
     mock_areas.return_value = area_codes
     vacancies = [Vacancy(vacancy) for vacancy in saved_vacancies_data]
@@ -152,5 +151,18 @@ def test_filter_by_currency(mock_areas: Any, saved_vacancies_data: list, area_co
     filtered_vacancies = MixinFilter.filter_by_location("Ташкент", filtered_vacancies)
     assert [vacancy.hh_id for vacancy in filtered_vacancies] == ["130467116", "130543586", "130153084"]
 
-    top_vacancies = MixinFilter.get_top(2, filtered_vacancies)
-    assert [vacancy.hh_id for vacancy in top_vacancies] == ["130467116", "130543586"]
+
+@pytest.mark.parametrize(
+    "number, data, expected",
+    [
+        ("3", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13], "1\n2\n3\n"),
+        ("пять", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13], "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n"),
+        ("15", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13], "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n"),
+        ("", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13], "1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n"),
+    ],
+)
+def test_show_top(number: str, data: list, expected: str, capsys: Any) -> None:
+
+    MixinFilter.show_top(number, data)
+    console_message = capsys.readouterr()
+    assert console_message.out == expected

@@ -9,9 +9,8 @@ from src.salary import Salary
 
 def test_hhr_init() -> None:
     hhr_object = HHResearch(text="Разработчик", area=123)
-    assert hhr_object._url == "https://api.hh.ru/vacancies"
-    assert hhr_object._headers == {"User-Agent": "HH-User-Agent"}
-    assert hhr_object._params == {"page": 0, "per_page": 100, "text": "Разработчик", "area": 123}
+    assert hhr_object.status_code is None
+    assert hhr_object.response == list()
 
 
 @patch("requests.head")
@@ -19,10 +18,13 @@ def test_get_response_no_connect(mock_head: Any) -> None:
 
     mock_head.side_effect = ConnectionError
     hhr_object = HHResearch(text="Разработчик", area=123)
-    assert hhr_object._response == []
+    assert hhr_object.status_code is None
+    assert hhr_object.response == list()
+    assert mock_head.call_count == 0
 
     hhr_object.get_response()
-    assert hhr_object._response == []
+    assert hhr_object.status_code is None
+    assert hhr_object.response == list()
     assert mock_head.call_count == 20
 
 
@@ -31,10 +33,11 @@ def test_get_response_bad_response(mock_head: Any) -> None:
 
     mock_head.return_value.status_code = 500
     hhr_object = HHResearch(text="Разработчик", area=123)
-    assert hhr_object._response == []
+    assert hhr_object.response == list()
 
     hhr_object.get_response()
-    assert hhr_object._response == []
+    assert hhr_object.status_code == 500
+    assert hhr_object.response == list()
     assert mock_head.call_count == 20
 
 
@@ -82,13 +85,12 @@ def test_get_response(mock_get: Any, mock_head: Any) -> None:
         ],
     }
     hh_request = HHResearch()
-    hh_request._params["page"] = 18
     vacancies_list = hh_request.get_response()
-    assert len(vacancies_list) == 4
+    assert len(vacancies_list) == 40
     assert vacancies_list[0] == vacancies_list[2]
     assert vacancies_list[1] == vacancies_list[3]
-    assert mock_get.call_count == 2
-    assert hh_request._status_code == 200
+    assert mock_get.call_count == 20
+    assert hh_request.status_code == 200
 
     Salary.required_currency = None
     Salary.currency_rates = None

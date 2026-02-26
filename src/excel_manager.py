@@ -68,7 +68,7 @@ class ExcelManager(BaseManager, MixinFilter):
                 else:
                     return cls.__describe_head(data_book, filename)
 
-    def __init__(self, filename: str = "data/vacancies.xlsx"):
+    def __init__(self, filename: str = "data\\vacancies.xlsx"):
         """Метод инициализации объекта класса. Принимает строку с именем Excel-файла, который будет определен, как
         база данных класса"""
 
